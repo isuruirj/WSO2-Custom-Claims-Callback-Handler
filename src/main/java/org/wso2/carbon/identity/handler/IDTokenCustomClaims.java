@@ -3,11 +3,16 @@ package org.wso2.carbon.identity.handler;
 import com.nimbusds.jwt.JWTClaimsSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.authz.OAuthAuthzReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.openidconnect.CustomClaimsCallbackHandler;
 import org.wso2.carbon.identity.openidconnect.DefaultOIDCClaimsCallbackHandler;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 public class IDTokenCustomClaims extends DefaultOIDCClaimsCallbackHandler implements CustomClaimsCallbackHandler {
 
@@ -24,6 +29,21 @@ public class IDTokenCustomClaims extends DefaultOIDCClaimsCallbackHandler implem
             spAppCreator = appDO.getAppOwner().getUserName();
         }
 
+        String tenantDomain = MultitenantUtils.getTenantDomain(spAppCreator);
+        RealmService realmService = IdentityTenantUtil.getRealmService();
+        UserStoreManager userStoreManager = null;
+        String [] roles = null;
+
+        try {
+            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+            userStoreManager = realmService.getTenantUserRealm(tenantId).getUserStoreManager();
+            roles = userStoreManager.getRoleListOfUser(spAppCreator);
+        } catch (UserStoreException e) {
+            log.error("Error occurred while retrieving claims for the JWT: ",e);
+            e.printStackTrace();
+        }
+
+        builder.claim("spAppCreatorRole", roles);
         builder.claim("spAppCreator",spAppCreator);
 
         if (jwtClaimsSet.getClaim("email") != null) {
@@ -48,6 +68,21 @@ public class IDTokenCustomClaims extends DefaultOIDCClaimsCallbackHandler implem
             spAppCreator = appDO.getAppOwner().getUserName();
         }
 
+        String tenantDomain = MultitenantUtils.getTenantDomain(spAppCreator);
+        RealmService realmService = IdentityTenantUtil.getRealmService();
+        UserStoreManager userStoreManager = null;
+        String [] roles = null;
+
+        try {
+            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+            userStoreManager = realmService.getTenantUserRealm(tenantId).getUserStoreManager();
+            roles = userStoreManager.getRoleListOfUser(spAppCreator);
+        } catch (UserStoreException e) {
+            log.error("Error occurred while retrieving claims for the JWT: ",e);
+            e.printStackTrace();
+        }
+
+        builder.claim("spAppCreatorRole", roles);
         builder.claim("spAppCreator",spAppCreator);
 
         if (jwtClaimsSet.getClaim("email") != null) {
